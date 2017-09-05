@@ -1,0 +1,78 @@
+<script src="https://pixlcore.com/demos/webcamjs/webcam.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+
+<div id="my_result1">
+	<form id="myAwesomeForm" method="post" action="/upload">
+    <input type="submit" id="submitButton" name="submitButton" />
+	</form>  
+</div>
+<a href="javascript:void(take_snapshot())">Take Snapshot</a>
+
+<div id="my_camera" style="width:320px; height:240px;"></div>
+<div id="my_result">	
+
+<script language="JavaScript">
+Webcam.attach( '#my_camera' );
+
+function take_snapshot() {
+    Webcam.snap( function(data_uri) {
+        document.getElementById('my_result').innerHTML = '<img id="image-id" src="'+data_uri+'"/>';
+    } );
+}
+
+function base64ToBlob(base64, mime) 
+{
+	mime = mime || '';
+	var sliceSize = 1024;
+	var byteChars = window.atob(base64);
+	var byteArrays = [];
+
+	for (var offset = 0, len = byteChars.length; offset < len; offset += sliceSize) {
+		var slice = byteChars.slice(offset, offset + sliceSize);
+
+		var byteNumbers = new Array(slice.length);
+		for (var i = 0; i < slice.length; i++) {
+			byteNumbers[i] = slice.charCodeAt(i);
+		}
+
+		var byteArray = new Uint8Array(byteNumbers);
+
+		byteArrays.push(byteArray);
+	}
+
+	return new Blob(byteArrays, {type: mime});
+}
+
+$("#myAwesomeForm").submit(function(e) {
+    e.preventDefault();
+    appendAndSubmit();
+});
+
+function appendAndSubmit() {
+	var url = "/upload";
+	var image = $('#image-id').attr('src');
+    // Split the base64 string in data and contentType
+    var block = image.split(";");
+    // Get the content type
+    var contentType = block[0].split(":")[1];// In this case "image/gif"
+    // get the real base64 content of the file
+    var realData = block[1].split(",")[1];
+	// Convert to blob
+	var blob = base64ToBlob(realData, contentType);
+	var formData = new FormData();
+	formData.append('picture', blob);
+
+	$.ajax(
+		{
+			url: url, 
+			type: "POST", 
+			cache: false,
+			contentType: false,
+			processData: false,
+			data: formData
+		}
+	).done(function(e) {
+		alert('done!');
+	});
+}
+</script>
